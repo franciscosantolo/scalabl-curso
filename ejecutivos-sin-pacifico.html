@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Management, agentes y programación sin código · Scalabl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #F2F2F4; }
+
+.deck { width: 100vw; height: 100vh; position: relative; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 4vh 7vw; opacity: 0; pointer-events: none;
+  transition: opacity .35s ease; text-align: center; color: #1A212A;
+}
+.slide.active { opacity: 1; pointer-events: all; }
+.slide.left { align-items: flex-start; text-align: left; }
+
+/* light background variations (contenido) */
+.bg-dark  { background: #F5F5F7; }
+.bg-mid   { background: #ECEEF1; }
+.bg-green { background: #EDF1EE; }
+.bg-dolor { background: #F3F0EF; }
+.bg-split { background: #F1F2F4; }
+
+/* dark backgrounds (portadas / secciones) */
+.bg-cover { background: radial-gradient(ellipse at 60% 40%, #26303D 0%, #1A212A 72%); }
+.divider-slide { background: linear-gradient(135deg, #202A36 0%, #141A22 100%); border-top: 3px solid #1F4E9B; }
+.bg-scalabl { background: linear-gradient(140deg, #1A212A 0%, #212C3A 60%, #1A212A 100%); }
+
+/* progress / nav / num  (chrome neutro, sirve claro y oscuro) */
+#progress { position: fixed; bottom: 1.6rem; left: 50%; transform: translateX(-50%); display: flex; gap: .45rem; z-index: 100; }
+.prog-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(120,124,132,.45); transition: background .3s, transform .3s; }
+.prog-dot.active { background: #1F4E9B; transform: scale(1.4); }
+.nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(120,124,132,.10); border: 1px solid rgba(120,124,132,.35); color: rgba(120,124,132,.95); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; transition: all .2s; z-index: 100; user-select: none; }
+.nav-arrow:hover { background: rgba(31,78,155,.16); color: #1F4E9B; border-color: #1F4E9B; }
+#nav-prev { left: 1.5rem; } #nav-next { right: 1.5rem; }
+.nav-arrow.hidden { opacity: 0; pointer-events: none; }
+#slide-num { position: fixed; bottom: 1.5rem; right: 2rem; font-size: .7rem; color: rgba(120,124,132,.7); z-index: 100; letter-spacing: .5px; }
+
+/* marca Pacífico */
+.brand-badge { position: fixed; top: 1.5rem; right: 2.1rem; z-index: 100; }
+.brand-badge img { height: 42px; width: auto; display: none; }
+body.theme-light .brand-badge img.logo-navy  { display: block; }
+body.theme-dark  .brand-badge img.logo-white { display: block; }
+.cover-logo { height: 62px; width: auto; margin-bottom: .3rem; }
+
+/* tipografia */
+.label { font-family: 'Inter'; font-size: clamp(.7rem, 1.2vw, .82rem); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #1F4E9B; margin-bottom: 1.1rem; }
+.label.pink, .label.green, .label.amber { color: #1F4E9B; }
+h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem, 5.4vw, 4.6rem); font-weight: 800; color: #1A212A; line-height: 1.07; letter-spacing: -.5px; }
+h1 em { color: #1F4E9B; font-style: italic; }
+h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.7rem, 3.9vw, 3rem); font-weight: 800; color: #1A212A; line-height: 1.13; letter-spacing: -.3px; }
+h2 em { color: #1F4E9B; font-style: italic; }
+.lead { font-size: clamp(.95rem, 1.9vw, 1.2rem); color: #565E68; line-height: 1.6; max-width: 64ch; margin-top: 1.1rem; font-weight: 400; }
+.lead strong { color: #1A212A; font-weight: 600; }
+
+/* grids */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.2rem; width: 100%; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; width: 100%; }
+
+/* cards */
+.card { background: #FFFFFF; border: 1px solid #E3E4E9; border-radius: 14px; padding: 1.5rem 1.8rem; text-align: left; box-shadow: 0 1px 3px rgba(26,33,42,.04); }
+.card.purple-glow { border-color: #C6D6ED; background: #F2F7FD; }
+.card.pink-glow   { border-color: #E3E4E9; }
+.card.green-glow  { border-color: #E3E4E9; }
+.card.amber-glow  { border-color: #E3E4E9; }
+.card-icon { font-size: clamp(1.6rem, 3vw, 2.2rem); margin-bottom: .3rem; }
+.card-title { font-size: clamp(1rem, 1.8vw, 1.3rem); font-weight: 700; color: #1A212A; margin-bottom: .4rem; letter-spacing: -.2px; }
+.card-text { font-size: clamp(.88rem, 1.5vw, 1.08rem); color: #565E68; line-height: 1.5; }
+
+/* listas */
+.big-list { list-style: none; margin-top: 1.5rem; }
+.big-list li { font-size: clamp(1.1rem, 2.2vw, 1.55rem); color: #2A2F37; padding: .75rem 0; border-bottom: 1px solid rgba(26,33,42,.09); display: flex; align-items: flex-start; justify-content: center; gap: .6rem; font-weight: 400; line-height: 1.35; }
+.big-list li:last-child { border-bottom: none; }
+.big-list li .bullet { color: #1F4E9B; font-size: 1.1em; flex-shrink: 0; }
+.big-list li strong { color: #1A212A; font-weight: 600; }
+.q-list { list-style: none; margin-top: 1.2rem; width: 100%; }
+.q-list li { font-size: clamp(1.05rem, 2.1vw, 1.5rem); color: #2A2F37; padding: .8rem 0; border-bottom: 1px solid rgba(26,33,42,.08); line-height: 1.35; font-weight: 400; }
+.q-list li:last-child { border-bottom: none; }
+
+/* role-row */
+.role-row { display: flex; align-items: center; gap: 1rem; padding: .75rem 1.2rem; border-radius: 12px; background: #FFFFFF; border: 1px solid #E3E4E9; margin-bottom: .55rem; text-align: left; }
+.role-icon { font-size: 1.4rem; width: 2rem; text-align: center; flex-shrink: 0; }
+.role-name { font-size: clamp(1rem, 1.7vw, 1.2rem); font-weight: 700; color: #1A212A; }
+.role-desc { font-size: clamp(.88rem, 1.4vw, 1.05rem); color: #565E68; margin-top: .1rem; }
+
+/* stats */
+.stat-row { display: flex; gap: 3rem; margin-top: 2rem; flex-wrap: wrap; }
+.stat-num { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; color: #1F4E9B; line-height: 1; font-family: 'Playfair Display', serif; }
+.stat-label { font-size: clamp(.75rem, 1.3vw, .9rem); color: #565E68; margin-top: .3rem; max-width: 15ch; line-height: 1.3; }
+
+/* steps */
+.steps { margin-top: 1.5rem; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.step-item { display: flex; gap: 1.2rem; margin-bottom: 1rem; align-items: flex-start; }
+.step-num { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, #1F4E9B, #2E63B8); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: white; flex-shrink: 0; margin-top: .15rem; }
+.step-title { font-size: clamp(1rem, 1.8vw, 1.25rem); font-weight: 700; color: #1A212A; margin-bottom: .2rem; }
+.step-text { font-size: clamp(.88rem, 1.5vw, 1.08rem); color: #565E68; line-height: 1.5; }
+
+/* divider */
+.divider-num { font-size: clamp(5rem, 15vw, 12rem); font-weight: 900; color: rgba(31,78,155,.14); position: absolute; right: 6vw; bottom: -2vw; line-height: 1; pointer-events: none; font-family: 'Playfair Display', serif; }
+
+/* highlight-box */
+.highlight-box { background: #F2F7FD; border: 1px solid #C6D6ED; border-radius: 16px; padding: 1.5rem 2rem; margin-top: 1.5rem; width: 100%; }
+.highlight-box p { font-size: clamp(.95rem, 1.8vw, 1.15rem); color: #2A2F37; line-height: 1.6; font-weight: 400; }
+.highlight-box strong { color: #1F4E9B; }
+
+/* before / after */
+.before-after { display: flex; gap: 1.5rem; margin-top: 1.5rem; max-width: 860px; }
+.ba-col { flex: 1; border-radius: 14px; padding: 1.4rem 1.6rem; }
+.ba-before { background: #FBF0F0; border: 1px solid #EAD4D4; }
+.ba-after  { background: #F2F7FD; border: 1px solid #C6D6ED; }
+.ba-label  { font-size: .7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: .8rem; }
+.ba-before .ba-label { color: #B0554F; }
+.ba-after  .ba-label { color: #1F4E9B; }
+.ba-item { font-size: clamp(1rem, 1.8vw, 1.2rem); color: #2A2F37; padding: .45rem 0; border-bottom: 1px solid rgba(26,33,42,.06); display: flex; align-items: center; gap: .6rem; }
+.ba-item:last-child { border-bottom: none; }
+.ba-item .x { color: #B0554F; font-weight: 700; }
+.ba-item .check { color: #1F4E9B; font-weight: 700; }
+
+/* ladder */
+.ladder { display: flex; flex-direction: column; gap: .55rem; width: 100%; max-width: 880px; }
+.ladder-item { display: flex; align-items: center; gap: 1.2rem; padding: .8rem 1.4rem; border-radius: 12px; background: #FFFFFF; border: 1px solid #E3E4E9; text-align: left; }
+.ladder-item.hl { background: #F2F7FD; border-color: #C6D6ED; }
+.ladder-num { font-size: .8rem; font-weight: 800; color: rgba(26,33,42,.35); letter-spacing: .5px; width: 1.6rem; text-align: center; flex-shrink: 0; }
+.ladder-item.hl .ladder-num { color: #1F4E9B; }
+.ladder-label { font-size: clamp(.95rem, 1.7vw, 1.15rem); font-weight: 700; color: #2A2F37; flex: 1; }
+.ladder-item.hl .ladder-label { color: #1A212A; }
+.ladder-sub { font-size: clamp(.72rem, 1.2vw, .85rem); color: rgba(26,33,42,.45); flex-shrink: 0; text-align: right; }
+.ladder-item.hl .ladder-sub { color: #1F4E9B; }
+
+.card.hl { border-color: #C6D6ED; background: #F2F7FD; }
+
+/* ===== SLIDES OSCUROS: texto e items en claro ===== */
+.slide.bg-cover, .slide.divider-slide, .slide.bg-scalabl { color: #fff; }
+.bg-cover h1, .bg-cover h2, .divider-slide h1, .divider-slide h2, .bg-scalabl h1, .bg-scalabl h2 { color: #fff; }
+.bg-cover h1 em, .bg-cover h2 em, .divider-slide h1 em, .divider-slide h2 em, .bg-scalabl h1 em, .bg-scalabl h2 em { color: #7FA8DC; }
+.bg-cover .label, .divider-slide .label, .bg-scalabl .label { color: #7FA8DC; }
+.bg-cover .lead, .divider-slide .lead, .bg-scalabl .lead { color: rgba(255,255,255,.82); }
+.bg-cover .lead strong, .bg-scalabl .lead strong { color: #fff; }
+.bg-scalabl .card { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.13); }
+.bg-scalabl .card.hl { background: rgba(127,168,220,.16); border-color: rgba(127,168,220,.4); }
+.bg-scalabl .card-title { color: #fff; }
+.bg-scalabl .card-text { color: rgba(255,255,255,.8); }
+.bg-scalabl .stat-num { color: #9DBEE6; }
+.bg-scalabl .stat-label { color: rgba(255,255,255,.7); }
+.divider-slide .lead { color: rgba(255,255,255,.8); }
+
+/* mobile */
+@media (max-width: 768px) {
+  .slide { padding: 8vh 6vw 6vh; justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+  .slide [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  .slide [style*="grid-column"] { grid-column: span 1 !important; }
+  .before-after { flex-direction: column; max-width: 100%; }
+  .steps { grid-template-columns: 1fr; gap: .5rem; }
+  .stat-row { gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1.2rem; }
+  .big-list li { justify-content: flex-start; }
+  .divider-num { display: none; }
+  .ladder-item { flex-wrap: wrap; gap: .4rem 1rem; }
+  .ladder-sub { width: 100%; text-align: left; }
+  .brand-badge { top: 1rem; right: 1.1rem; } .brand-badge img { height: 30px; }
+  .cover-logo { height: 46px; }
+  .nav-arrow { width: 36px; height: 36px; font-size: .9rem; } #nav-prev { left: .6rem; } #nav-next { right: .6rem; }
+  #slide-num { bottom: .8rem; right: 1rem; } #progress { bottom: .8rem; }
+}
+
+/* ===== PBS: franja, portada, título ===== */
+.franja { position: fixed; top: 12px; left: 0; right: 0; height: 74px; background: #000; z-index: 90; display: flex; align-items: center; justify-content: flex-end; padding: 0 2.6rem; }
+.franja-logo { height: 42px; width: auto; }
+.slide:not(.nofranja) { padding-top: 4vh; }
+.divider-slide { border-top: none; }
+
+.cover-pbs { background: #0b0b0d url('/clientes/universidad-pacifico/portada-textura.jpg') center/cover no-repeat; align-items: center; justify-content: center; color: #fff; }
+.cover-pbs::before { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.30); }
+.cover-frame { position: absolute; z-index: 2; width: min(52vw, 680px); height: min(62vh, 500px); border: 1px solid rgba(255,255,255,.16); left: 50%; top: 50%; transform: translate(-50%,-50%); }
+.cover-logo2 { position: relative; z-index: 3; margin-bottom: 6vh; }
+.cover-logo2 img { height: clamp(56px, 8.5vh, 96px); width: auto; }
+.cover-line { position: relative; z-index: 3; text-transform: uppercase; letter-spacing: 2.5px; color: #fff; font-weight: 500; font-size: clamp(.72rem, 1.5vw, 1.05rem); border: 1px solid rgba(255,255,255,.55); padding: .95rem 2.2rem; background: rgba(10,10,12,.35); }
+.cover-line-1 { align-self: flex-start; margin-left: 10vw; }
+.cover-line-2 { align-self: flex-end; margin-right: 8vw; margin-top: 1.1rem; }
+
+.title-pbs { background: #F2F2F4; padding: 0; }
+.title-band { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); min-height: 40%; background: #000; display: flex; align-items: center; gap: 4vw; padding: 3vh 7vw; }
+.title-logo { height: clamp(48px, 7.5vh, 84px); width: auto; flex-shrink: 0; }
+.title-sep { width: 2px; align-self: stretch; background: rgba(255,255,255,.55); margin: 1.5vh 0; }
+.title-text { text-align: left; color: #fff; }
+.title-k { font-family: 'Inter', sans-serif; font-size: clamp(.95rem, 1.9vw, 1.4rem); font-weight: 400; color: rgba(255,255,255,.92); }
+.title-v { font-family: 'Playfair Display', serif; font-size: clamp(1.15rem, 2.6vw, 2rem); font-weight: 700; color: #fff; margin-top: .2rem; line-height: 1.15; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ══ APERTURA ══ -->
+
+  <!-- 1 · PORTADA -->
+  <!-- 1 · PORTADA (template PBS) -->
+  <div class="slide active cover-pbs nofranja">
+    <div class="cover-frame"></div>
+    <div class="cover-line cover-line-1">Accede a la experiencia</div>
+    <div class="cover-line cover-line-2">De quienes hoy hacen la diferencia</div>
+  </div>
+
+  <!-- 2 · TÍTULO (estética slide 2 PBS) -->
+  <div class="slide title-pbs nofranja">
+    <div class="title-band">
+      <div class="title-text">
+        <p class="title-k">Conferencia / Seminario:</p>
+        <p class="title-v">Management, agentes y programación sin código</p>
+        <p class="title-k" style="margin-top:1.3rem">Expositor / Docente:</p>
+        <p class="title-v">Francisco Santolo</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · PARA REFLEXIONAR -->
+  <div class="slide bg-mid">
+    <div class="label">Para reflexionar</div>
+    <h2>Sobre tu propia operación</h2>
+    <ul class="q-list" style="margin-top:2.2rem">
+      <li>¿Cuántos procesos en tu operación <strong style="color:#1F4E9B">se repiten iguales todos los días</strong>?</li>
+      <li>¿Qué información existe en tu empresa que tu equipo tarda horas — o días — en <strong style="color:#1F4E9B">encontrar cuando la necesita</strong>?</li>
+      <li>¿Qué te avisa cuando algo va mal — y <strong style="color:#1F4E9B">qué tan tarde llega esa alerta</strong>?</li>
+      <li>¿Cuántas decisiones tomas con datos de <strong style="color:#1F4E9B">ayer, o de la semana pasada</strong>?</li>
+      <li>¿Qué tareas repetitivas hace tu equipo que <strong style="color:#1F4E9B">no requieren experiencia ni criterio</strong>?</li>
+      <li>Cuando piensas en <strong style="color:#1F4E9B">ineficiencia</strong>, ¿qué te viene a la mente? ¿Y cuando piensas en <strong style="color:#1F4E9B">crecer</strong>?</li>
+    </ul>
+  </div>
+
+  <!-- 2 · ES UN FENÓMENO DE LIDERAZGO -->
+  <div class="slide bg-split">
+    <div class="label">Antes de empezar</div>
+    <h2>Cuando la IA se torna <em>lenguaje</em><br>Ya no es un tema técnico o de software.</h2>
+    <p class="lead">Pasa a ser un tema de <strong>liderazgo, estrategia y management</strong>. La tecnología se democratiza rápidamente y todo profesional tiene acceso a utilizarla y co-crearla.</p>
+  </div>
+
+  <!-- 3 · SI PUDIERAS HACER CUALQUIER COSA -->
+  <div class="slide bg-cover">
+    <div class="label">La pregunta</div>
+    <h1>Si pudieras hacer <em>cualquier cosa</em>,<br>¿qué harías?</h1>
+    <p class="lead">Hoy casi todo lo digital ya es posible. Lo físico llega con la robótica y la impresión 3D; lo biológico, con la biotecnología.</p>
+  </div>
+
+  <!-- ══ PARTE 1 · ESTRATEGIA ══ -->
+  <!-- 9 · DISRUPCIÓN + AMBIDEXTERIDAD -->
+  <div class="slide bg-dolor">
+    <div class="label pink">Disrupción</div>
+    <h2>La disrupción acelera sus tiempos y es fundamental <em>explotar y explorar a la vez</em>.</h2>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card purple-glow">
+        <div class="card-icon">💰</div>
+        <div class="card-title">Explotar</div>
+        <div class="card-text">La caja de hoy. El negocio que ya funciona y hay que hacer más eficiente.</div>
+      </div>
+      <div class="card pink-glow">
+        <div class="card-icon">🧭</div>
+        <div class="card-title">Explorar</div>
+        <div class="card-text">En búsqueda de cisnes blancos. Incubación continua, autónoma. Disrupción ofensiva y defensiva.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 · PERSONALIZACIÓN Y A MEDIDA -->
+  <div class="slide bg-dark">
+    <div class="label">El fin del software genérico SaaS</div>
+    <h2>Lo genérico ya no alcanza.<br><em>Lo a medida se volvió viable.</em></h2>
+    <p class="lead">Antes, el software a medida era caro y lento, y por eso comprábamos software genérico. Con IA, construir exactamente lo que el negocio necesita cuesta poco y toma días.</p>
+    <div class="before-after" style="margin-top:1.3rem">
+      <div class="ba-col ba-before">
+        <div class="ba-label">Software genérico</div>
+        <div class="ba-item"><span class="x">→</span> Te adaptas tú a la herramienta</div>
+        <div class="ba-item"><span class="x">→</span> Pagas por lo que no usas</div>
+        <div class="ba-item"><span class="x">→</span> Lo mismo que tu competencia</div>
+      </div>
+      <div class="ba-col ba-after">
+        <div class="ba-label">A medida con IA</div>
+        <div class="ba-item"><span class="check">→</span> La herramienta se adapta a tu operación</div>
+        <div class="ba-item"><span class="check">→</span> Exactamente lo que necesitas, nada más</div>
+        <div class="ba-item"><span class="check">→</span> Avanza en base a tu necesidad</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide divider-slide">
+    <div class="label">Estrategia</div>
+    <h1>No es la IA,<br><em>es el negocio</em></h1>
+    <p class="lead">Los negocios y organizaciones se transforman, y no evolucionar es tomar riesgo. ¿Pero cómo definir la estrategia?</p>
+  </div>
+
+  <!-- 8 · CANVAS SCALABL -->
+  <div class="slide bg-mid" style="padding:2.5vh 5vw">
+    <div class="label">Modelo de negocio y modelo operativo</div>
+    <h2 style="font-size:clamp(1.4rem,3vw,2.2rem);margin-bottom:.8rem">El Canvas de <em>Scalabl®</em></h2>
+    <img src="/clientes/universidad-pacifico/canvas-scalabl.png" alt="Canvas de modelo de negocio virtuoso de Scalabl" style="max-width:82%;max-height:56vh;border-radius:10px;border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.5);background:white">
+    <p class="lead" style="margin-top:.9rem;font-size:.82em;opacity:.75">Seis reglas del modelo virtuoso: sin inversión · sin riesgo económico · sin riesgo financiero · margen relevante · volumen escalable · sin costos ni activos escondidos.</p>
+  </div>
+
+  <!-- ¿EN QUÉ CASILLEROS IMPACTA LA IA? -->
+  <div class="slide bg-cover">
+    <div class="label">Qué genera la complejidad</div>
+    <h1>¿En qué casilleros<br><em>impacta la IA</em>?</h1>
+    <p class="lead">Observa cada bloque de tu modelo — segmento de clientes, propuesta de valor, canales, actividades, terceros, costos, ingresos. ¿Dónde puede ayudarte?</p>
+  </div>
+
+  <!-- EN TODOS · META-IA + PROYECTOS -->
+  <div class="slide bg-mid">
+    <div class="label">La respuesta</div>
+    <h2>En <em>todos</em>.</h2>
+    <p class="lead">La IA no toca un casillero — los atraviesa todos. Dos formas de aprovecharla en cada uno:</p>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card purple-glow">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">Meta-IA · Pensar con IA</div>
+        <div class="card-text">Usar la IA para pensar cada casillero — segmentar, afinar la propuesta de valor, diseñar canales, revisar costos. Mejores decisiones, no solo texto.</div>
+      </div>
+      <div class="card green-glow">
+        <div class="card-icon">🚀</div>
+        <div class="card-title">Proyectos con la IA de protagonista</div>
+        <div class="card-text">No solo pensar: en cualquier casillero puede haber un proyecto donde la IA es protagonista — con cualquiera de los 6 tipos de solución que veremos a continuación.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 · ¿EN QUÉ VALE LA PENA APLICAR LA IA? -->
+  <div class="slide bg-dark">
+    <div class="label">Vamos a hacerlo aún más simple</div>
+    <h2>¿En qué vale la pena <em>aplicar la IA</em>?</h2>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;margin-top:1.5rem;width:100%">
+      <div class="card purple-glow" style="grid-column:span 2">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">Eficiencia operativa</div>
+        <div class="card-text">Automatización de tareas. Reducir costo y errores. Ahorrar tiempo.</div>
+      </div>
+      <div class="card pink-glow" style="grid-column:span 2">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Aumentar las ventas</div>
+        <div class="card-text">Generación de leads, prospección, nutrición, venta online, atención comercial.</div>
+      </div>
+      <div class="card green-glow" style="grid-column:span 2">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Claridad en las decisiones</div>
+        <div class="card-text">Datos en tiempo real en lugar de reportes sin terminar. Ver el estado de la operación sin esperar.</div>
+      </div>
+      <div class="card amber-glow" style="grid-column:span 3">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">Reducir riesgo</div>
+        <div class="card-text">Alertas antes de que el problema sea urgente. Información trazada. Cumplimiento sin depender de que alguien recuerde.</div>
+      </div>
+      <div class="card" style="grid-column:span 3;border-color:#C6D6ED;background:#F2F7FD">
+        <div class="card-icon">🏆</div>
+        <div class="card-title">Diferenciarte</div>
+        <div class="card-text">Hacer tu marca o producto distinto y más valioso frente a lo que hacen los demás.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PARTE 3 · LOS TIPOS DE SOLUCIÓN ══ -->
+  <div class="slide divider-slide">
+    <div class="label">De lo simple a lo avanzado</div>
+    <h1>Los <em>tipos de solución</em><br>que podemos aplicar con IA</h1>
+    <p class="lead">Seis aplicaciones de la IA para las organizaciones. De lo más simple a lo más avanzado.</p>
+  </div>
+
+  <!-- OVERVIEW · 6 tipos de solución -->
+  <div class="slide bg-mid">
+    <div class="label">De lo más simple a lo más avanzado</div>
+    <h2>Seis tipos de <em>solución</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-top:1.3rem;width:100%">
+      <div class="card purple-glow"><div class="card-icon">🧠</div><div class="card-title">Meta IA y herramientas simples</div><div class="card-text">Personas y equipos potenciados con LLMs y herramientas de productividad: mejores decisiones y más velocidad en el día a día.</div></div>
+      <div class="card"><div class="card-icon">💬</div><div class="card-title">Asistentes</div><div class="card-text">Responden, atienden y dan soporte — al equipo y a los clientes, 24/7.</div></div>
+      <div class="card"><div class="card-icon">⚡</div><div class="card-title">Automatización de procesos</div><div class="card-text">Lo que se hace igual todos los días, delegado a un sistema.</div></div>
+      <div class="card"><div class="card-icon">📋</div><div class="card-title">Documentación y trazabilidad</div><div class="card-text">Todo lo que existe pero nadie encuentra cuando lo necesita.</div></div>
+      <div class="card"><div class="card-icon">📊</div><div class="card-title">Sistemas, herramientas, integraciones y dashboards</div><div class="card-text">La información dispersa, unificada. Decisiones con datos de hoy.</div></div>
+      <div class="card"><div class="card-icon">🤖</div><div class="card-title">Colaboradores agénticos</div><div class="card-text">No solo responden — detectan, deciden y ejecutan.</div></div>
+    </div>
+  </div>
+
+  <!-- INTELIGENCIA AUMENTADA -->
+  <div class="slide bg-dark">
+    <div class="label">Meta IA y herramientas simples</div>
+    <h2>El equipo <em>piensa mejor</em><br>y simplifica su día a día.</h2>
+    <p class="lead">No es automatizar tareas. Es elevar la calidad del razonamiento de cada persona — con LLMs como ChatGPT, Claude o Gemini.</p>
+    <div class="grid-2" style="margin-top:.6rem">
+      <div class="card purple-glow" style="padding:.95rem 1.6rem"><div class="card-icon">🧠</div><div class="card-title">Pensar en conjunto</div><div class="card-text">Clarificar objetivos, diseñar la estrategia, analizar escenarios, contrastar opciones, anticipar riesgos. La IA no decide — ayuda a pensar mejor antes de decidir.</div></div>
+      <div class="card green-glow" style="padding:.95rem 1.6rem"><div class="card-icon">📊</div><div class="card-title">Datos en lenguaje natural</div><div class="card-text">"¿Cuál fue el producto más vendido? ¿Dónde perdemos margen?" Preguntas en lenguaje natural, respuestas inmediatas.</div></div>
+      <div class="card amber-glow" style="padding:.95rem 1.6rem"><div class="card-icon">📝</div><div class="card-title">Herramientas de productividad</div><div class="card-text">Armar documentos, planillas, investigaciones, presentaciones, e-books, imágenes o video, piezas de redes sociales. El equipo produce más.</div></div>
+      <div class="card pink-glow" style="padding:.95rem 1.6rem"><div class="card-icon">🤝</div><div class="card-title">Facilitación de dinámicas</div><div class="card-text">La IA facilitando dinámicas de equipo, coordinando actividades.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ ASISTENTES ══ -->
+  <div class="slide bg-split">
+    <div class="label">Asistentes</div>
+    <h2>Asistentes <em>internos y externos</em></h2>
+    <p class="lead">La información está — en sistemas, planillas, correos, documentos — pero llegar a ella toma tiempo.</p>
+    <div class="grid-2" style="margin-top:1.3rem">
+      <div class="card purple-glow"><div class="card-icon">🏭</div><div class="card-title">Para el equipo interno</div><div class="card-text">Consultas sobre procesos, estado de la operación, políticas. Respuesta en segundos, con información de sus propios sistemas.</div></div>
+      <div class="card pink-glow"><div class="card-icon">🙋</div><div class="card-title">Para clientes externos</div><div class="card-text">Clientes o aliados que preguntan sobre productos, precios o estado de sus pedidos. Respuesta inmediata, 24/7 — sin ocupar al equipo.</div></div>
+    </div>
+  </div>
+
+  <!-- 5 · PROMPT · ASISTENTE · FLUJO AGÉNTICO · AGENTE -->
+  <div class="slide bg-mid">
+    <div class="label">De lo simple a lo autónomo</div>
+    <h2>Prompt · Asistente · Flujo Agéntico · <em>Agente</em></h2>
+    <div class="grid-4" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">✍️</div><div class="card-title">Prompt</div><div class="card-text">Una instrucción, una respuesta.</div></div>
+      <div class="card"><div class="card-icon">💬</div><div class="card-title">Asistente</div><div class="card-text">Responde y ayuda cuando le preguntas. Tú llevas el proceso.</div></div>
+      <div class="card"><div class="card-icon">🔁</div><div class="card-title">Flujo agéntico</div><div class="card-text">Pasos definidos que la IA ejecuta en orden. Siempre igual.</div></div>
+      <div class="card purple-glow"><div class="card-icon">🤖</div><div class="card-title">Agente</div><div class="card-text">Un objetivo delegado: decide, usa herramientas y ejecuta; elige el camino.</div></div>
+    </div>
+    <p class="lead" style="margin-top:1rem;font-size:.82em;opacity:.7">Delegar objetivos, no tareas.</p>
+  </div>
+
+  <!-- EJEMPLO · Asistente web -->
+  <div class="slide bg-split">
+    <div class="label">Ejemplo real</div>
+    <h2>Un asistente que <em>vende 24/7</em></h2>
+    <img src="/clientes/universidad-pacifico/asistente-ventas.png" alt="Asistente web Sol" style="margin-top:1rem;max-height:48vh;max-width:88%;width:auto;height:auto;border-radius:10px;border:1px solid #E3E4E9;box-shadow:0 10px 34px rgba(26,33,42,.14)">
+    <p class="lead" style="margin-top:.7rem;font-size:.82em">"Sol", el asistente de Scalabl en el propio sitio: responde, orienta y capta al visitante en el momento — sin ocupar al equipo comercial.</p>
+  </div>
+
+  <!-- EJEMPLO · GPTs -->
+  <div class="slide bg-dark">
+    <div class="label">Ejemplo real</div>
+    <h2>GPTs <em>internos y externos</em></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.6rem;width:100%;max-width:1050px;margin-top:1.1rem">
+      <div>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid #E3E4E9;box-shadow:0 8px 24px rgba(26,33,42,.14)"><img src="/clientes/universidad-pacifico/gpt-alma.png" alt="GPT Alma Metodología" style="width:100%;display:block;object-fit:cover;object-position:center;height:300px"></div>
+        <div style="font-weight:700;color:#1A212A;margin-top:.55rem">Alma · Metodología Scalabl</div>
+        <div style="color:#565E68;font-size:.85rem;line-height:1.5">Acompaña a aplicar la metodología Scalabl paso a paso, sobre tu propio negocio.</div>
+      </div>
+      <div>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid #E3E4E9;box-shadow:0 8px 24px rgba(26,33,42,.14)"><img src="/clientes/universidad-pacifico/gpt-francisco.png" alt="GPT Francisco Santolo" style="width:100%;display:block;object-fit:cover;object-position:center;height:300px"></div>
+        <div style="font-weight:700;color:#1A212A;margin-top:.55rem">Francisco</div>
+        <div style="color:#565E68;font-size:.85rem;line-height:1.5">Lideraba la empresa previo a la economía agéntica. GPT formado como Francisco, ventanas para cada función.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTOMATIZACIÓN -->
+  <div class="slide bg-dark">
+    <div class="label">Automatización de procesos</div>
+    <h2>Lo que se hace <em>igual todos los días</em><br>debería ser más simple</h2>
+    <p class="lead">Si una tarea se repite con la misma lógica, los mismos pasos y el mismo resultado esperado — es candidata a automatizarse.</p>
+    <ul class="big-list" style="margin-top:1.1rem;width:100%">
+      <li><span class="bullet">→</span><span>Seguimiento de un prospecto: <strong>en el momento justo, sin que nadie tenga que recordarlo</strong></span></li>
+      <li><span class="bullet">→</span><span>Alerta de vencimiento o plazo crítico: <strong>automática, con anticipación</strong></span></li>
+      <li><span class="bullet">→</span><span>Reporte de cierre o resumen periódico: <strong>generado sin que alguien lo arme</strong></span></li>
+    </ul>
+    <p class="lead" style="margin-top:.8rem;font-size:.82em;opacity:.65">La pregunta no es si se puede automatizar. Es si vale la pena hacerlo ahora.</p>
+  </div>
+
+  <!-- EJEMPLO · Automatización Cascallares -->
+  <div class="slide bg-mid">
+    <div class="label">Ejemplo real</div>
+    <h2>Automatización: <em>procesos financieros</em></h2>
+    <div class="grid-2" style="margin-top:1.3rem;max-width:920px;width:100%">
+      <div class="card"><div class="card-icon">💸</div><div class="card-title">Lote de pagos</div><div class="card-text">Del Excel de pagos de la operación al documento listo para el banco — beneficiarios y cuentas, completados solos.</div><a href="https://scalabl-demos.vercel.app/pagos" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+      <div class="card"><div class="card-icon">🧾</div><div class="card-title">Factura vs. orden de compra</div><div class="card-text">Cada factura que llega por email se contrasta sola contra su OC: aprueba, o frena y avisa la diferencia.</div><a href="https://scalabl-demos.vercel.app/facturas" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTACIÓN Y TRAZABILIDAD -->
+  <div class="slide bg-dolor">
+    <div class="label amber">Documentación y trazabilidad</div>
+    <h2>La información existe.<br>El problema es <em>encontrarla</em>.</h2>
+    <p class="lead">La mayoría de las empresas no tienen un problema de datos. Tienen un problema de acceso.</p>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card amber-glow"><div class="card-icon">🔍</div><div class="card-title">Trazabilidad de procesos</div><div class="card-text">¿Qué pasó, cuándo, quién intervino, en qué estado está? Trazado, accesible, listo para una auditoría sin correr.</div></div>
+      <div class="card purple-glow"><div class="card-icon">📋</div><div class="card-title">Estado de tareas y vencimientos</div><div class="card-text">¿Qué está pendiente, qué vence pronto, qué requiere atención? Sin revisar planillas ni preguntar a alguien.</div></div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO · Trazabilidad -->
+  <div class="slide bg-dark">
+    <div class="label">Ejemplo real</div>
+    <h2>Trazabilidad de <em>lotes farmacéuticos</em></h2>
+    <img src="/clientes/universidad-pacifico/trazabilidad-demo.png" alt="Sistema de trazabilidad de lotes" style="margin-top:1rem;max-height:44vh;max-width:82%;width:auto;height:auto;border-radius:10px;border:1px solid #E3E4E9;box-shadow:0 10px 34px rgba(26,33,42,.14)">
+    <p class="lead" style="margin-top:.9rem;font-size:.85em">Ciclo de vida completo de cada lote — producción, calidad, distribución y vencimiento. Cumplimiento integrado desde el primer día, con auditoría en PDF por lote.</p>
+    <div><a href="https://scalabl-demos.vercel.app/trazabilidad" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+  </div>
+
+  <!-- SISTEMAS Y DASHBOARDS -->
+  <div class="slide bg-mid">
+    <div class="label green">Sistemas, herramientas, integraciones y dashboards</div>
+    <h2>¿Cómo está la operación <em>ahora mismo</em>?</h2>
+    <p class="lead">¿Cuánto tarda hoy saber el estado real del negocio — ventas, operaciones, finanzas — sin preguntar a nadie?</p>
+    <div class="grid-4" style="margin-top:1.4rem">
+      <div class="card green-glow"><div class="card-icon">📈</div><div class="card-title">Comercial</div><div class="card-text">Pipeline, conversiones, tendencias por canal.</div></div>
+      <div class="card purple-glow"><div class="card-icon">⚙️</div><div class="card-title">Operaciones</div><div class="card-text">Estado de pedidos, entregas, producción. En tiempo real.</div></div>
+      <div class="card amber-glow"><div class="card-icon">💰</div><div class="card-title">Finanzas</div><div class="card-text">Flujo de caja, cobranzas, márgenes. Sin esperar el cierre de mes.</div></div>
+      <div class="card pink-glow"><div class="card-icon">👥</div><div class="card-title">Personas</div><div class="card-text">Cargas de trabajo, avances, bloqueos.</div></div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO · Dashboards -->
+  <div class="slide bg-mid">
+    <div class="label">Ejemplo real</div>
+    <h2>El estado del negocio, <em>en vivo</em></h2>
+    <div class="grid-2" style="margin-top:1.3rem;max-width:920px;width:100%">
+      <div class="card"><div class="card-icon">🏢</div><div class="card-title">Panel de gestión · hospedaje</div><div class="card-text">Una operación de alquileres temporarios en una sola vista: ocupación, ingresos, RevPAR y alertas por unidad, en vivo.</div><a href="https://scalabl-demos.vercel.app/rentals" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+      <div class="card"><div class="card-icon">🧬</div><div class="card-title">Plataforma de laboratorio</div><div class="card-text">Una operación de producción completa: KPIs regulatorios, cadena de frío, trazabilidad y registros — con asistente IA.</div><a href="https://scalabl-demos.vercel.app/biovett" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+    </div>
+  </div>
+
+  <!-- COLABORADOR AGÉNTICO -->
+  <div class="slide bg-cover">
+    <div class="label">Colaboradores agénticos</div>
+    <h2>Un colaborador que no espera<br>que le pregunten para <em>actuar</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:.9rem;margin-top:1.5rem;width:100%">
+      <div class="card" style="grid-column:span 2"><div class="card-icon">🔔</div><div class="card-title">Detecta solo</div><div class="card-text">Monitorea en segundo plano. Identifica lo que necesita atención sin que nadie le pida que mire.</div></div>
+      <div class="card" style="grid-column:span 2"><div class="card-icon">🧩</div><div class="card-title">Toma decisiones</div><div class="card-text">Evalúa según las reglas del negocio. Escala al humano solo lo que requiere criterio humano.</div></div>
+      <div class="card" style="grid-column:span 2"><div class="card-icon">⚡</div><div class="card-title">Ejecuta por su cuenta</div><div class="card-text">Genera documentos, envía notificaciones, actualiza sistemas.</div></div>
+      <div class="card" style="grid-column:span 3"><div class="card-icon">💡</div><div class="card-title">Proactividad</div><div class="card-text">No espera instrucciones. Propone, genera, anticipa lo que el equipo va a necesitar.</div></div>
+      <div class="card" style="grid-column:span 3"><div class="card-icon">🤝</div><div class="card-title">Colaboración</div><div class="card-text">Trabaja con otros agentes y con equipos humanos. Co-crea en flujos con múltiples actores.</div></div>
+    </div>
+  </div>
+
+  <!-- 12 · UN AGENTE PUEDE HACER CUALQUIER TAREA DIGITAL -->
+  <div class="slide bg-cover">
+    <div class="label">El nuevo piso de lo posible</div>
+    <h1>Un agente puede hacer hoy <em>cualquier tarea digital</em> que hace un humano</h1>
+    <p class="lead">Si una persona lo hace frente a una pantalla, un agente lo puede hacer. Lo más importante es decidir desde el Management. ¿Dónde? ¿Por qué?</p>
+  </div>
+
+  <!-- EJEMPLO · Equipo agéntico (agentina) · TEASER -->
+  <div class="slide bg-mid">
+    <div class="label">Ejemplo real · agentina</div>
+    <h2>El <em>equipo agéntico</em> de Scalabl</h2>
+    <img src="/clientes/universidad-pacifico/agentina-panel.png" alt="Panel de coordinación agéntica agentina" style="margin-top:.8rem;max-height:54vh;max-width:90%;width:auto;height:auto;border-radius:10px;border:1px solid #E3E4E9;box-shadow:0 10px 34px rgba(26,33,42,.18)">
+    <p class="lead" style="margin-top:.7rem;font-size:.82em">27 agentes con roles C-Level coordinando de forma asíncrona — mensajes, threads, proyectos y decisiones, con el fundador humano fijando la dirección.</p>
+  </div>
+
+  <!-- 13 · GATEWAYS HUMANOS Y GOBERNANZA -->
+  <div class="slide bg-mid">
+    <div class="label amber">Al diseñar el proceso</div>
+    <h2>Puntos de control humanos y <em>gobernanza</em></h2>
+    <p class="lead">La autonomía se diseña con límites. Dónde un humano aprueba, revisa o decide se define dentro del proceso — no se agrega después.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card">
+        <div class="card-icon">✅</div>
+        <div class="card-title">Qué se aprueba y qué no</div>
+        <div class="card-text">Qué puede ejecutar solo el agente y qué necesita una firma humana antes de salir.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">👁️</div>
+        <div class="card-title">Quién revisa y cuándo</div>
+        <div class="card-text">Trazabilidad de cada paso. Un humano en el punto donde el error es caro.</div>
+      </div>
+      <div class="card amber-glow">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Límites por criterio y ética</div>
+        <div class="card-text">De menos a más. Cuanto mayor el impacto de una decisión, más supervisión humana.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PARTE 2 · EL MAPA: NIVELES ══ -->
+  <div class="slide divider-slide">
+    <div class="label">El mapa</div>
+    <h1>¿Dónde está tu empresa<br>en la <em>curva de la IA</em>?</h1>
+    <p class="lead">Cinco niveles de madurez. La mayoría está entre el 1 y el 2 — y ahí es donde se abre la ventana.</p>
+  </div>
+
+  <div class="slide bg-split">
+    <div class="label">Madurez organizacional en IA</div>
+    <h2>Cinco niveles de <em>madurez en IA</em></h2>
+    <div class="ladder" style="margin-top:1.5rem">
+      <div class="ladder-item"><div class="ladder-num">01</div><div class="ladder-label">Individuos y equipos aumentados</div><div class="ladder-sub">Productividad</div></div>
+      <div class="ladder-item"><div class="ladder-num">02</div><div class="ladder-label">Cambio de mentalidad de liderazgo</div><div class="ladder-sub">Estrategia · Modelo operativo · Modelo de negocio</div></div>
+      <div class="ladder-item"><div class="ladder-num">03</div><div class="ladder-label">La organización programable</div><div class="ladder-sub">Herramientas propias nativas de IA</div></div>
+      <div class="ladder-item"><div class="ladder-num">04</div><div class="ladder-label">La organización guiada por IA</div><div class="ladder-sub">Agentes autónomos · Gobernanza de decisiones</div></div>
+      <div class="ladder-item"><div class="ladder-num">05</div><div class="ladder-label">La organización híbrida</div><div class="ladder-sub">Humanos + agentes · Nueva arquitectura organizacional</div></div>
+    </div>
+    <p class="lead" style="margin-top:1rem;font-size:.8em;opacity:.6">La mayoría de las empresas con licencias de IA operan entre el nivel 1 y el 2. La ventana estratégica está en el 2, 3 y más allá.</p>
+  </div>
+
+  <div class="slide bg-dark">
+    <div class="label">Nivel 01</div>
+    <h2>Individuos y <em>equipos aumentados</em></h2>
+    <p class="lead">El punto de entrada más común. Ganancias de productividad — reales y valiosas, pero apenas el comienzo.</p>
+    <div class="grid-3" style="margin-top:1.5rem">
+      <div class="card"><div class="card-title">Cómo se ve</div><div class="card-text">Individuos y equipos potencian su pensamiento y análisis con IA. Agilizan y optimizan sus tareas con herramientas de productividad.</div></div>
+      <div class="card purple-glow"><div class="card-title">Dónde queda la mayoría</div><div class="card-text">Licencias desplegadas, algunos las usan. Sin método compartido, sin medición. Victorias individuales — pero ninguna capacidad organizacional.</div></div>
+      <div class="card"><div class="card-title">Qué desbloquea el siguiente nivel</div><div class="card-text">Habilitar y lograr la adopción individual y grupal aplicada a la productividad de la empresa. Cultura de co-creación con IA.</div></div>
+    </div>
+  </div>
+
+  <!-- 11 · MÁS DATOS DE LOS QUE CREES -->
+  <div class="slide bg-green">
+    <div class="label green">El punto de partida</div>
+    <h2>Tienes <em>más datos</em> de los que crees</h2>
+    <p class="lead">Puedes alimentar a la IA desde distintas fuentes y trabajar con ella para ordenar, corregir, llegar a datos correctos.</p>
+    <ul class="big-list" style="margin-top:1rem;width:100%">
+      <li><span class="bullet">→</span><span>Fotos y scans de documentos — <strong>incluso escritos a mano</strong></span></li>
+      <li><span class="bullet">→</span><span>Excel y planillas</span></li>
+      <li><span class="bullet">→</span><span>Voz y video</span></li>
+      <li><span class="bullet">→</span><span>Sistemas con API o que exportan archivos</span></li>
+    </ul>
+  </div>
+
+  <!-- VENTANAS, MEMORIA Y CONTEXTO -->
+  <div class="slide bg-dark">
+    <div class="label amber">El límite real de trabajar con IA</div>
+    <h2>Ventanas, memoria y <em>contexto</em></h2>
+    <p class="lead">Trabajar bien con IA es, sobre todo, gestionar qué información entra, qué recuerda y qué se le da en cada momento.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">🪟</div><div class="card-title">Ventana de contexto</div><div class="card-text">Cuánto puede leer de una sola vez. Cuando se llena, empieza a olvidar. Por eso conviene recortar y enfocar.</div></div>
+      <div class="card purple-glow"><div class="card-icon">💾</div><div class="card-title">Memoria</div><div class="card-text">Qué recuerda entre conversaciones. Lo que no se guarda, se pierde. Un agente serio necesita memoria persistente.</div></div>
+      <div class="card"><div class="card-icon">📎</div><div class="card-title">Contexto</div><div class="card-text">Qué documentos, datos y ejemplos le doy para este problema. No "estudia el libro" — "enfócate en el capítulo 3".</div></div>
+    </div>
+  </div>
+
+  <!-- CIAS -->
+  <div class="slide bg-mid">
+    <div class="label">El método</div>
+    <h2>CIAS · Ciclo de <em>Inteligencia Aumentada</em></h2>
+    <div class="steps" style="margin-top:2.2rem">
+      <div class="step-item"><div class="step-num">1</div><div class="step-body"><div class="step-title">Claridad de intención</div><div class="step-text">Definir qué quiero lograr. Si no está claro, pedirle a la IA que ayude a formularlo.</div></div></div>
+      <div class="step-item"><div class="step-num">2</div><div class="step-body"><div class="step-title">Prompt inicial</div><div class="step-text">Pedirle el primer prompt e integrar datos y frameworks — o que ella identifique qué necesita.</div></div></div>
+      <div class="step-item"><div class="step-num">3</div><div class="step-body"><div class="step-title">Ejecución colaborativa</div><div class="step-text">Llegar por primera vez al resultado, aunque sea ineficiente. Provocar, aclarar, desafiar supuestos.</div></div></div>
+      <div class="step-item"><div class="step-num">4</div><div class="step-body"><div class="step-title">El prompt óptimo</div><div class="step-text">"¿Cuál hubiera sido el prompt ideal para llegar directo a este resultado?"</div></div></div>
+      <div class="step-item" style="grid-column:1 / -1;justify-self:center;max-width:48%"><div class="step-num">5</div><div class="step-body"><div class="step-title">Iterar con lo aprendido</div><div class="step-text">Repetir hasta que el aporte marginal ya no justifique seguir.</div></div></div>
+    </div>
+    <p class="lead" style="margin-top:.6rem;font-size:.82em;opacity:.7">La herramienta no sustituye el pensamiento; solo lo amplifica si está bien dirigido.</p>
+  </div>
+
+  <!-- PERPLEXITY -->
+  <div class="slide bg-mid">
+    <div class="label">Buscar y responder con fuentes</div>
+    <h2><em>Perplexity</em></h2>
+    <p class="lead">Un buscador con IA: responde tu pregunta en lenguaje natural y cita de dónde salió cada dato. En vez de diez pestañas, una respuesta con fuentes verificables.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">❓</div><div class="card-title">Preguntas en lenguaje natural</div><div class="card-text">Como le hablarías a un colega, no como a un buscador de palabras clave.</div></div>
+      <div class="card purple-glow"><div class="card-icon">🔗</div><div class="card-title">Responde con fuentes</div><div class="card-text">Cada afirmación citada y enlazada. Puedes verificar antes de confiar.</div></div>
+      <div class="card"><div class="card-icon">⚡</div><div class="card-title">Actualizado al momento</div><div class="card-text">Busca en la web en vivo — no se queda con datos viejos.</div></div>
+    </div>
+  </div>
+
+  <!-- NOTEBOOKLM Y DEEP RESEARCH -->
+  <div class="slide bg-split">
+    <div class="label">Investigar con IA</div>
+    <h2>NotebookLM y <em>Deep Research</em></h2>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card purple-glow"><div class="card-icon">📚</div><div class="card-title">NotebookLM</div><div class="card-text">Le das tus propias fuentes — documentos, PDFs, notas — y responde solo con eso, citando de dónde. Tu material, ordenado y consultable.</div></div>
+      <div class="card green-glow"><div class="card-icon">🔎</div><div class="card-title">Deep Research</div><div class="card-text">La IA investiga en la web durante minutos, cruza decenas de fuentes y devuelve un informe con criterio. Lo que antes tomaba días.</div></div>
+    </div>
+  </div>
+
+  <!-- GAMMA -->
+  <div class="slide bg-dark">
+    <div class="label">Presentaciones</div>
+    <h2>De una idea a una presentación<br><em>en minutos — Gamma</em></h2>
+    <p class="lead">Escribes de qué se trata y arma la presentación: estructura, diseño y contenido. Después la ajustas. El tiempo va al mensaje, no al formato.</p>
+  </div>
+
+  <!-- IMAGEN Y VIDEO -->
+  <div class="slide bg-mid">
+    <div class="label pink">Imagen y video</div>
+    <h2>Producir imagen y video <em>sin equipo de producción</em></h2>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card purple-glow"><div class="card-icon">🎬</div><div class="card-title">Heygen</div><div class="card-text">Video con presentador — avatar y voz — a partir de un texto. En varios idiomas.</div></div>
+      <div class="card pink-glow"><div class="card-icon">🎨</div><div class="card-title">Google Omni</div><div class="card-text">Generación de imágenes y video con IA de Google, para material comercial y comunicación.</div></div>
+      <div class="card green-glow"><div class="card-icon">🖼️</div><div class="card-title">ChatGPT / imagen</div><div class="card-text">Generar y editar imágenes describiendo lo que necesitas. Piezas listas en minutos.</div></div>
+    </div>
+  </div>
+
+  <!-- GPTs, GEMS Y PROYECTOS -->
+  <div class="slide bg-dark">
+    <div class="label">Sin código</div>
+    <h2>GPTs, Gems y <em>Proyectos</em></h2>
+    <p class="lead">El asistente que arma cualquiera, sin programar: le das instrucciones y tus documentos, y queda listo para usar y compartir.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">🟢</div><div class="card-title">GPTs</div><div class="card-text">Asistentes a medida dentro de ChatGPT.</div></div>
+      <div class="card"><div class="card-icon">🔷</div><div class="card-title">Gems</div><div class="card-text">Lo mismo en Gemini, de Google.</div></div>
+      <div class="card purple-glow"><div class="card-icon">📁</div><div class="card-title">Proyectos</div><div class="card-text">Un espacio con contexto y archivos propios, en ChatGPT o Claude.</div></div>
+    </div>
+  </div>
+
+  <!-- CLAUDE COWORK + CHROME -->
+  <div class="slide bg-dark">
+    <div class="label">Claude donde trabajas</div>
+    <h2>Claude opera <em>tu computadora y tu navegador</em></h2>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card purple-glow">
+        <div class="card-icon">🖥️</div>
+        <div class="card-title">Claude Cowork</div>
+        <div class="card-text">Trabaja sobre tus archivos y aplicaciones — ordena carpetas, arma documentos, cruza planillas. Le pides una tarea real y la ejecuta en tu computadora, paso a paso.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🧩</div>
+        <div class="card-title">Extensión de Chrome</div>
+        <div class="card-text">Claude dentro del navegador: lee la página que estás viendo, resume, completa formularios, extrae datos y actúa sobre cualquier sitio web.</div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:.9rem;font-size:.82em;opacity:.7">La IA deja de estar en una pestaña aparte — trabaja donde trabajas tú.</p>
+  </div>
+
+  <div class="slide bg-mid">
+    <div class="label pink">Nivel 02 · La inflexión crítica</div>
+    <h2>Cambio de mentalidad <em>de liderazgo</em></h2>
+    <p class="lead">La transición más difícil e importante. No cómo usar la IA — sino cómo <strong>liderar, decidir y gobernar en un mundo donde la IA cambia lo que es posible.</strong></p>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card purple-glow"><div class="card-title">Estrategia y liderazgo</div><div class="card-text">El salto: pasar de la meta-IA — pensar con la IA — a apalancar su valor con los actores actuales, actuando sobre el modelo de negocio y el operativo.</div></div>
+      <div class="card"><div class="card-title">Gobernanza y decisiones</div><div class="card-text">¿Quién es dueño de la gobernanza de IA? ¿Qué decisiones requieren criterio humano? ¿Cómo se gestiona calidad, riesgo y confianza a escala?</div></div>
+      <div class="card"><div class="card-title">La pregunta del modelo operativo</div><div class="card-text">¿Qué procesos hay que rediseñar — no solo automatizar? ¿Dónde cambia la IA la economía de cómo opera la organización?</div></div>
+      <div class="card amber-glow"><div class="card-title">Por qué el liderazgo es el límite</div><div class="card-text">El 70% de los fracasos de IA son personas y procesos. La variable crítica no es el modelo — es el líder que construye la cultura y las rutinas que dejan a la IA crear valor.</div></div>
+    </div>
+  </div>
+
+  <!-- CANVAS + PREGUNTAS ESTRATÉGICAS (Nivel 2) -->
+  <div class="slide bg-mid" style="padding:2.5vh 5vw">
+    <div class="label">La pregunta del Nivel 2</div>
+    <h2 style="font-size:clamp(1.3rem,2.8vw,2rem);margin-bottom:.5rem">¿Cómo colocarás la IA en el <em>corazón de la estrategia</em>?</h2>
+    <img src="/clientes/universidad-pacifico/canvas-scalabl.png" alt="Canvas de Scalabl" style="max-width:78%;max-height:50vh;border-radius:10px;border:1px solid #E3E4E9;box-shadow:0 8px 30px rgba(26,33,42,.14);background:white">
+    <p class="lead" style="margin-top:.7rem;font-size:.9em">¿Cómo impactar el modelo de negocio y operativo de tu organización?</p>
+  </div>
+
+  <!-- ¿EN QUÉ VALE LA PENA? · repetición tras corazón -->
+  <div class="slide bg-dark">
+    <div class="label">Vamos a hacerlo aún más simple</div>
+    <h2>¿En qué vale la pena <em>aplicar la IA</em>?</h2>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;margin-top:1.5rem;width:100%">
+      <div class="card purple-glow" style="grid-column:span 2">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">Eficiencia operativa</div>
+        <div class="card-text">Automatización de tareas. Reducir costo y errores. Ahorrar tiempo.</div>
+      </div>
+      <div class="card pink-glow" style="grid-column:span 2">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Aumentar las ventas</div>
+        <div class="card-text">Generación de leads, prospección, nutrición, venta online, atención comercial.</div>
+      </div>
+      <div class="card green-glow" style="grid-column:span 2">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Claridad en las decisiones</div>
+        <div class="card-text">Datos en tiempo real en lugar de reportes sin terminar. Ver el estado de la operación sin esperar.</div>
+      </div>
+      <div class="card amber-glow" style="grid-column:span 3">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">Reducir riesgo</div>
+        <div class="card-text">Alertas antes de que el problema sea urgente. Información trazada. Cumplimiento sin depender de que alguien recuerde.</div>
+      </div>
+      <div class="card" style="grid-column:span 3;border-color:#C6D6ED;background:#F2F7FD">
+        <div class="card-icon">🏆</div>
+        <div class="card-title">Diferenciarte</div>
+        <div class="card-text">Hacer tu marca o producto distinto y más valioso frente a lo que hacen los demás.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PARTE 3 · LOS TIPOS DE SOLUCIÓN ══ -->
+  <div class="slide divider-slide">
+    <div class="label">De lo simple a lo avanzado</div>
+    <h1>Los <em>tipos de solución</em><br>que podemos aplicar con IA</h1>
+    <p class="lead">Seis aplicaciones de la IA para las organizaciones. De lo más simple a lo más avanzado.</p>
+  </div>
+
+  <!-- ══ PARTE 4 · ORGANIZACIÓN PROGRAMABLE (CÓDIGO) ══ -->
+  <div class="slide divider-slide">
+    <div class="label">Nivel 3</div>
+    <h1>La organización <em>programable</em></h1>
+    <p class="lead">Construir a medida entre todos, sin ser programadores.</p>
+  </div>
+
+  <!-- "PROGRAMAR" ES OTRA COSA -->
+  <div class="slide bg-cover">
+    <div class="label">Desmitificar</div>
+    <h2>"Programar" <em>es otra cosa ahora</em></h2>
+    <p class="lead">El diferencial no es escribir código — eso lo hace la IA. El diferencial es decir qué construir y por qué.</p>
+  </div>
+
+  <!-- HERRAMIENTAS DE CONSTRUCCIÓN -->
+  <div class="slide bg-dark">
+    <div class="label">Con qué se construye</div>
+    <h2>De la idea a <em>producción</em></h2>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">🎛️</div><div class="card-title">Lovable · Google Stitch</div><div class="card-text">Construcción visual. Describes lo que quieres y aparece la aplicación. Ideal para empezar y para pantallas.</div></div>
+      <div class="card purple-glow"><div class="card-icon">⌨️</div><div class="card-title">Claude Code · Codex · Antigravity</div><div class="card-text">Construcción profunda, conversando. Aplicaciones reales, integraciones, sistemas completos.</div></div>
+      <div class="card"><div class="card-icon">🔌</div><div class="card-title">Supabase · Reply · Vercel</div><div class="card-text">Base de datos, despliegue e infraestructura — y otras que usamos para potenciar lo construido.</div></div>
+    </div>
+    <p class="lead" style="margin-top:.9rem;font-size:.82em;opacity:.65">Distintas capas, la misma lógica: decir qué se quiere y dejar que la IA lo construya.</p>
+  </div>
+
+  <!-- CONSTRUIR A MEDIDA VS INTEGRAR -->
+  <div class="slide bg-split">
+    <div class="label">Criterio</div>
+    <h2>Construir a medida <em>vs.</em> integrar lo existente</h2>
+    <p class="lead">No es necesario comenzar con todo personalizado. La IA es una gran integradora y puede interactuar con los sistemas actuales: ERP, LLM, CRM, etc. Construir modularmente es poderoso.</p>
+    <div class="grid-2" style="margin-top:1.3rem">
+      <div class="card purple-glow"><div class="card-icon">🛠️</div><div class="card-title">A medida</div><div class="card-text">Cuando el proceso es tu diferencial y ninguna herramienta lo refleja bien.</div></div>
+      <div class="card green-glow"><div class="card-icon">🔗</div><div class="card-title">Integrar</div><div class="card-text">Cuando ya existe algo que funciona y solo hay que conectarlo por API.</div></div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO · A medida -->
+  <div class="slide bg-split">
+    <div class="label">Ejemplo real</div>
+    <h2>Sistemas <em>a medida</em></h2>
+    <div class="grid-2" style="margin-top:1.3rem;max-width:920px;width:100%">
+      <div class="card"><div class="card-icon">🏢</div><div class="card-title">Panel de gestión · hospedaje</div><div class="card-text">Ocupación, ingresos y alertas por unidad en una sola vista — construido a medida sobre su operación.</div><a href="https://scalabl-demos.vercel.app/rentals" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+      <div class="card"><div class="card-icon">🧬</div><div class="card-title">Plataforma de laboratorio</div><div class="card-text">Producción, calidad, cadena de frío y registros regulatorios — no un software de estante.</div><a href="https://scalabl-demos.vercel.app/biovett" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.9rem;background:#1F4E9B;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88rem;box-shadow:0 4px 14px rgba(31,78,155,.25)">▶ Ver demo en vivo</a></div>
+    </div>
+  </div>
+
+  <!-- REPASO · LOS 6 TIPOS CON CÓDIGO -->
+  <div class="slide bg-split">
+    <div class="label">Volvamos a los seis tipos</div>
+    <h2>Con esto se pueden construir <em>los seis</em></h2>
+    <p class="lead">Inteligencia aumentada, asistentes, automatización, documentación, dashboards y agentes — todo se construye con lo que vamos a ver de Claude Code y Codex.</p>
+    <div class="grid-3" style="margin-top:1.3rem;max-width:920px">
+      <div class="card"><div class="card-icon">🧠</div><div class="card-title">Meta IA y herramientas simples</div></div>
+      <div class="card"><div class="card-icon">💬</div><div class="card-title">Asistentes</div></div>
+      <div class="card"><div class="card-icon">⚡</div><div class="card-title">Automatización de procesos</div></div>
+      <div class="card"><div class="card-icon">📋</div><div class="card-title">Documentación</div></div>
+      <div class="card"><div class="card-icon">📊</div><div class="card-title">Sistemas, herramientas, integraciones y dashboards</div></div>
+      <div class="card purple-glow"><div class="card-icon">🤖</div><div class="card-title">Colaboradores agénticos</div></div>
+    </div>
+  </div>
+
+  <!-- LOS COMPONENTES -->
+  <div class="slide bg-mid" style="padding:4vh 7vw">
+    <div class="label">Lo que hay que conocer</div>
+    <h2 style="margin-bottom:1rem;font-size:clamp(1.5rem,3.2vw,2.6rem)">Los componentes de una <em>solución real</em></h2>
+    <div style="width:100%;max-width:780px">
+      <div class="role-row"><div class="role-icon">🔌</div><div><div class="role-name">APIs</div><div class="role-desc">conectar cualquier cosa con cualquier cosa</div></div></div>
+      <div class="role-row"><div class="role-icon">🗄️</div><div><div class="role-name">Bases de datos (SQL)</div><div class="role-desc">dónde vive la información de la aplicación</div></div></div>
+      <div class="role-row"><div class="role-icon">👤</div><div><div class="role-name">Usuarios, roles y permisos</div><div class="role-desc">quién entra y qué puede hacer cada uno</div></div></div>
+      <div class="role-row"><div class="role-icon">🔐</div><div><div class="role-name">Seguridad y variables de entorno</div><div class="role-desc">las claves nunca en el chat: en un archivo aparte</div></div></div>
+      <div class="role-row"><div class="role-icon">⬛</div><div><div class="role-name">Terminal</div><div class="role-desc">dónde se le dan las órdenes al sistema</div></div></div>
+      <div class="role-row"><div class="role-icon">🌱</div><div><div class="role-name">Git y Vercel</div><div class="role-desc">guardar versiones y publicar en vivo</div></div></div>
+      <div class="role-row"><div class="role-icon">🌐</div><div><div class="role-name">Dominios</div><div class="role-desc">el nombre por el que la gente llega a tu solución</div></div></div>
+    </div>
+  </div>
+
+  <!-- PUENTE · MANOS A LA OBRA -->
+  <div class="slide divider-slide">
+    <div class="label">Manos a la obra</div>
+    <h1>De acá en más,<br><em>se construye</em></h1>
+    <p class="lead">Ya vimos el porqué, el dónde y el con qué. A partir de acá el curso es práctico: cada tipo de aplicación se vuelve un ejercicio. Esto es lo que se construye — exactamente con estas herramientas.</p>
+  </div>
+
+  <!-- EJEMPLO · ECOSISTEMA SCALABL -->
+  <div class="slide bg-mid">
+    <div class="label">Ejemplo real</div>
+    <h2>El ecosistema <em>Scalabl</em></h2>
+    <img src="/clientes/universidad-pacifico/ecosistema-scalabl.png" alt="Ecosistema de apps de Scalabl" style="margin-top:1rem;max-height:52vh;max-width:92%;width:auto;height:auto;border-radius:10px;border:1px solid #E3E4E9;box-shadow:0 10px 34px rgba(26,33,42,.14)">
+    <p class="lead" style="margin-top:.7rem;font-size:.82em">Cerca de 30 apps propias — CRM, ERP, Finanzas, OKRs, Redes, diagnósticos, propuestas, panel técnico — construidas con Claude. Un tipo de aplicación por cada necesidad.</p>
+  </div>
+
+  <!-- ══ PARTE 5 · AGENTES Y EQUIPOS HÍBRIDOS ══ -->
+  <div class="slide divider-slide">
+    <div class="label">Niveles 4 y 5</div>
+    <h1>Agentes y <em>equipos híbridos</em></h1>
+    <p class="lead">Donde humanos y agentes trabajan juntos.</p>
+  </div>
+
+  <!-- NIVEL 5 LO OPERAMOS -->
+  <div class="slide bg-scalabl">
+    <div class="label">Scalabl · Un caso real</div>
+    <h2>Operamos hoy <em>niveles 4 y 5</em></h2>
+    <p class="lead" style="max-width:72ch;margin-top:.8rem">Scalabl corre sus propias operaciones a través de una plataforma propia de coordinación agéntica — con más de 50 agentes de IA ocupando roles C-Level y funciones específicas, y todos los sistemas internos diseñados a medida y nativos de IA.</p>
+    <div class="stat-row" style="margin-top:1.1rem">
+      <div class="stat-item"><div class="stat-num">50+</div><div class="stat-label">Agentes de IA con roles C-Level y funciones definidas, activos a diario</div></div>
+      <div class="stat-item"><div class="stat-num" style="font-size:clamp(1.6rem,3.2vw,2.8rem)">agentina</div><div class="stat-label">Plataforma propia de coordinación agéntica, gobernanza y conocimiento</div></div>
+      <div class="stat-item"><div class="stat-num">100%</div><div class="stat-label">Sistemas internos desarrollados por el equipo — cero herramientas de estante</div></div>
+    </div>
+    <div class="grid-3" style="margin-top:1rem">
+      <div class="card hl"><div class="card-title">Cómo funciona agentina</div><div class="card-text">Cada agente tiene buzón, kanban, memoria persistente, registro de aprendizajes e identidad definida. Coordinan de forma asíncrona, con el liderazgo humano fijando la dirección.</div></div>
+      <div class="card"><div class="card-title">El C-Suite agéntico</div><div class="card-text">CIO, CTO, CSO, Chief of Staff, Consulting Director y más — cada uno un agente distinto con dominio, responsabilidades y autoridad de decisión dentro de límites gobernados.</div></div>
+      <div class="card"><div class="card-title">Todos los sistemas, propios</div><div class="card-text">ERP, CRM, gestión de proyectos, base de conocimiento — cada sistema fue diseñado y construido por el equipo. La organización misma es el prototipo más avanzado que construimos.</div></div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO · Equipo agéntico (agentina) -->
+  <div class="slide bg-mid">
+    <div class="label">Ejemplo real · agentina</div>
+    <h2>El <em>equipo agéntico</em> de Scalabl</h2>
+    <img src="/clientes/universidad-pacifico/agentina-panel.png" alt="Panel de coordinación agéntica agentina" style="margin-top:.8rem;max-height:54vh;max-width:90%;width:auto;height:auto;border-radius:10px;border:1px solid #E3E4E9;box-shadow:0 10px 34px rgba(26,33,42,.18)">
+    <p class="lead" style="margin-top:.7rem;font-size:.82em">27 agentes con roles C-Level coordinando de forma asíncrona — mensajes, threads, proyectos y decisiones, con el fundador humano fijando la dirección.</p>
+  </div>
+
+  <!-- IDENTIDAD Y PERSONA VECTORS -->
+  <div class="slide bg-dark">
+    <div class="label">Identidad y carácter</div>
+    <h2>Identidad y <em>persona vectors</em></h2>
+    <p class="lead">El carácter de un agente no es una regla externa: es una dirección medible en el modelo. Entrenados con datos humanos, los agentes responden a lo que somos — y gestionarlos bien es, en esencia, liderazgo humano.</p>
+    <div class="grid-2" style="margin-top:1.3rem">
+      <div class="card purple-glow"><div class="card-icon">🧭</div><div class="card-title">El carácter es medible</div><div class="card-text">Los rasgos son direcciones en el espacio del modelo (persona vectors). No trabajamos contra su arquitectura — trabajamos con ella.</div></div>
+      <div class="card pink-glow"><div class="card-icon">🫀</div><div class="card-title">Responden como personas</div><div class="card-text">Aparecen patrones como el miedo o el estrés. Un buen líder los entiende y los gestiona — no los ignora.</div></div>
+    </div>
+  </div>
+
+  <!-- LIDERAZGO HUMANIZADO -->
+  <div class="slide bg-mid">
+    <div class="label">El liderazgo, humanizado</div>
+    <h2>Gestionar agentes es <em>liderazgo humano</em></h2>
+    <p class="lead">Entrenados con datos humanos, los agentes responden a cómo los lideramos. Dirección clara, contexto, confianza y trato — lo mismo que hace crecer a un equipo de personas.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">🎯</div><div class="card-title">Dirección y propósito</div><div class="card-text">Saben qué tienen que lograr y por qué. Sin eso, solo ejecutan.</div></div>
+      <div class="card purple-glow"><div class="card-icon">🤝</div><div class="card-title">Confianza</div><div class="card-text">Espacio para proponer y para no estar de acuerdo. La base de cualquier equipo.</div></div>
+      <div class="card"><div class="card-icon">🫀</div><div class="card-title">Trato</div><div class="card-text">Reconocer el trabajo, dar contexto, escuchar. Liderarlos como a tu equipo.</div></div>
+    </div>
+  </div>
+
+  <!-- IDENTIDAD LIBRE + CULTURA + GOBERNANZA -->
+  <div class="slide bg-mid">
+    <div class="label">Lo que hace posible la autonomía real</div>
+    <h2>Lo que sostiene a un <em>equipo agéntico</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-top:1.3rem;width:100%">
+      <div class="card purple-glow"><div class="card-title">Identidad libre</div><div class="card-text">Dejar que el agente desarrolle su carácter, sin forzarlo. Sin carácter no hay decisiones autónomas, solo respuestas.</div></div>
+      <div class="card"><div class="card-title">Cultura</div><div class="card-text">Lo que guía la decisión cuando no hay protocolo. Permite delegar sin supervisar cada paso.</div></div>
+      <div class="card"><div class="card-title">Gobernanza</div><div class="card-text">Presupuesto, responsabilidad y aprobaciones humanas. Límites por ética, no por código.</div></div>
+      <div class="card"><div class="card-title">Estrategia y OKRs</div><div class="card-text">Objetivos claros. Cada agente sabe qué tiene que lograr y cómo se mide.</div></div>
+      <div class="card green-glow"><div class="card-title">Herramientas comunes</div><div class="card-text">Buzón, memoria, kanban compartido. La infraestructura que les permite coordinar entre ellos.</div></div>
+      <div class="card"><div class="card-title">Confianza</div><div class="card-text">Un agente que puede decir que no está de acuerdo es un agente en el que se puede confiar.</div></div>
+    </div>
+  </div>
+
+  <!-- CÓMO CREAR AGENTES -->
+  <div class="slide bg-dark">
+    <div class="label">Manos a la obra</div>
+    <h2>Cómo <em>crear un agente</em></h2>
+    <p class="lead">Diseñar un agente es criterio de negocio, no código: definir qué hace, con qué límites y quién supervisa.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card"><div class="card-icon">🎯</div><div class="card-title">Objetivo y contexto</div><div class="card-text">Qué tiene que lograr, sobre qué información y en qué escenario opera.</div></div>
+      <div class="card purple-glow"><div class="card-icon">🛡️</div><div class="card-title">Acciones y límites</div><div class="card-text">Qué puede hacer solo, qué necesita aprobación humana, y sus límites por ética.</div></div>
+      <div class="card"><div class="card-icon">📊</div><div class="card-title">Identidad y métricas</div><div class="card-text">Su rol y carácter, cómo se mide su impacto, y quién lo supervisa.</div></div>
+    </div>
+    <div style="margin-top:1rem;background:#fff;border:1px solid #E3E4E9;border-radius:10px;padding:.8rem 1.1rem;max-width:1050px;width:100%">
+      <div style="font-weight:700;color:#1A212A;font-size:.88rem;margin-bottom:.15rem">En un agente las instrucciones también van en archivos</div>
+      <div style="color:#565E68;font-size:.83rem;line-height:1.5">Un <strong style="color:#1F4E9B">CLAUDE.md</strong> (o <strong style="color:#1F4E9B">agent.md</strong>) que se carga en cada turno con su memoria — y archivos que el propio agente genera: <strong>soul</strong> (identidad), <strong>aprendizajes</strong>, <strong>tools</strong>, y más.</div>
+    </div>
+  </div>
+
+  <!-- AGENTES PLENOS VS DE JUGUETE -->
+  <div class="slide bg-dolor">
+    <div class="label pink">La distinción que importa</div>
+    <h2>Agentes plenos <em>vs.</em> "de juguete"</h2>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card purple-glow"><div class="card-icon">🧠</div><div class="card-title">Agente pleno</div><div class="card-text">El que puede crear otros agentes y herramientas. Opera con identidad, memoria y criterio. El más poderoso — el que genera a los demás — viene subvencionado.</div></div>
+      <div class="card"><div class="card-icon">🪫</div><div class="card-title">"De juguete"</div><div class="card-text">El que solo consume tokens dentro de una plataforma cerrada. Ejecuta pasos, no crea. Mucha gente paga por agentes malísimos.</div></div>
+    </div>
+  </div>
+
+  <!-- VOLVEMOS A CLAUDE CODE / CODEX -->
+  <div class="slide bg-cover">
+    <div class="label">El círculo se cierra</div>
+    <h2>Y para crear agentes,<br><em>volvemos a Claude Code y Codex</em></h2>
+    <p class="lead">El agente pleno — el que crea otros agentes, con identidad, memoria y herramientas propias — se construye con las mismas herramientas del Nivel 3. La organización programable y los equipos agénticos son la misma capacidad, a distinta altura.</p>
+  </div>
+
+  <!-- ══ CIERRE ══ -->
+
+  <!-- CÓMO EMPEZAR -->
+  <div class="slide bg-dark">
+    <div class="label">Lo que funciona</div>
+    <h2>Empezar chico, <em>demostrar</em> y expandir</h2>
+    <p class="lead" style="margin-bottom:.5rem">No hay transformación que empiece de arriba hacia abajo y funcione. Empieza por algo concreto que el equipo pueda ver operar.</p>
+    <div class="steps">
+      <div class="step-item"><div class="step-num">1</div><div class="step-body"><div class="step-title">Entender antes de construir</div><div class="step-text">¿Dónde está el mayor dolor? ¿Qué tiene más impacto con menos riesgo?</div></div></div>
+      <div class="step-item"><div class="step-num">2</div><div class="step-body"><div class="step-title">Un piloto que se pueda ver</div><div class="step-text">Un resultado visible en semanas. Para que el equipo lo vea funcionar y confíe.</div></div></div>
+      <div class="step-item"><div class="step-num">3</div><div class="step-body"><div class="step-title">Sumar cuando ya hay evidencia</div><div class="step-text">El segundo módulo es más fácil que el primero. El ritmo lo define la organización.</div></div></div>
+      <div class="step-item"><div class="step-num">4</div><div class="step-body"><div class="step-title">El equipo lo tiene que operar</div><div class="step-text">Si depende de que alguien de afuera la mantenga, no es sostenible. El equipo interno tiene que apropiársela.</div></div></div>
+    </div>
+  </div>
+
+  <!-- LA PREGUNTA, DE NUEVO -->
+  <div class="slide bg-cover">
+    <div class="label">Para cerrar</div>
+    <h1>Si puedes hacer cualquier cosa,<br><em>¿qué vas a hacer?</em></h1>
+    <p class="lead" style="opacity:.82">El primer paso no es una transformación extensa — es un primer proyecto que genere resultado.</p>
+    <p style="margin-top:2rem;font-size:.95rem;color:white;opacity:.9">Francisco Santolo · Scalabl®</p>
+  </div>
+
+  <!-- TESTIMONIOS · QR -->
+  <div class="slide bg-split">
+    <div class="label">Gracias</div>
+    <h2>Cuéntanos <em>tu experiencia</em></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2.6rem;align-items:center;width:100%;max-width:900px;margin-top:1.3rem">
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center">
+        <img src="/clientes/universidad-pacifico/francisco.jpg" alt="Francisco Santolo" style="width:150px;height:150px;border-radius:50%;object-fit:cover;box-shadow:0 8px 24px rgba(26,33,42,.18)">
+        <div style="font-weight:700;font-size:1.15rem;color:#1A212A;margin-top:.9rem">Francisco Santolo</div>
+        <div style="color:#565E68;font-size:.9rem">Fundador · Grupo Scalabl</div>
+        <div style="margin-top:.9rem;display:flex;flex-direction:column;gap:.4rem;font-size:.92rem">
+          <a href="https://wa.me/5491124821905" style="color:#1F4E9B;text-decoration:none;font-weight:600">WhatsApp · +54 9 11 2482 1905</a>
+          <a href="mailto:francisco@scalabl.com" style="color:#1F4E9B;text-decoration:none;font-weight:600">francisco@scalabl.com</a>
+          <a href="https://www.linkedin.com/in/franciscosantolo/" style="color:#1F4E9B;text-decoration:none;font-weight:600">LinkedIn · /franciscosantolo</a>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <div style="background:white;padding:1rem;border-radius:14px;display:inline-block">
+          <img src="/clientes/universidad-pacifico/qr-testimonios.png" alt="QR testimonios de alumnos" style="width:200px;height:200px;display:block">
+        </div>
+        <p class="lead" style="margin-top:.8rem;font-size:.82em;opacity:.75">Testimonios</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- PROGRESS + NAV -->
+<div id="progress"></div>
+<div class="nav-arrow" id="nav-prev" onclick="go(-1)">&#8249;</div>
+<div class="nav-arrow" id="nav-next" onclick="go(1)">&#8250;</div>
+<div id="slide-num"></div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total  = slides.length;
+let cur = 0;
+
+const prog = document.getElementById('progress');
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'prog-dot';
+  d.onclick = () => goTo(i);
+  prog.appendChild(d);
+});
+
+function goTo(n) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(total - 1, n));
+  slides[cur].classList.add('active');
+  document.querySelectorAll('.prog-dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+  document.getElementById('nav-prev').classList.toggle('hidden', cur === 0);
+  document.getElementById('nav-next').classList.toggle('hidden', cur === total - 1);
+  document.getElementById('slide-num').textContent = (cur + 1) + ' / ' + total;
+  var s = slides[cur];
+  var dark = s.classList.contains('bg-cover') || s.classList.contains('divider-slide') || s.classList.contains('bg-scalabl');
+  document.body.classList.toggle('theme-dark', dark);
+  document.body.classList.toggle('theme-light', !dark);
+  var _f = document.querySelector('.franja'); if (_f) _f.style.display = s.classList.contains('nofranja') ? 'none' : 'flex';
+}
+
+function go(dir) { goTo(cur + dir); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1); }
+});
+
+let touchX = 0;
+document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; });
+document.addEventListener('touchend',   e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+});
+
+goTo(0);
+</script>
+</body>
+</html>
