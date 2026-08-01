@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Prominente · Go-to-Market — Dónde estamos y qué vamos a trabajar</title>
+<style>
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #e9edf5;
+         font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif;
+         color: #2b3040; }
+  .wrap { display: flex; align-items: center; justify-content: center;
+          min-height: 100vh; padding: 16px; }
+  .marco { overflow: hidden; }
+  .slide { width: 1280px; height: 720px; background: #fff;
+           padding: 38px 46px 28px; position: relative;
+           transform-origin: top left;
+           box-shadow: 0 10px 40px rgba(30,38,100,.13); border-radius: 4px; }
+
+  .marca { position: absolute; top: 32px; right: 46px; text-align: right; }
+  .marca .n { font-family: Cambria, Georgia, serif; font-weight: 700;
+              font-size: 20px; color: #1E2664; letter-spacing: .5px; }
+  .marca .s { font-size: 8.5px; color: #7f89a8; letter-spacing: 1.6px;
+              text-transform: uppercase; margin-top: 1px; }
+
+  h1 { font-family: Cambria, Georgia, serif; font-size: 31px; color: #1E2664;
+       font-weight: 700; line-height: 1.1; }
+  .sub { font-size: 13px; color: #6e7794; margin-top: 4px; }
+
+  .banda { display: flex; align-items: baseline; gap: 12px; margin: 18px 0 10px; }
+  .banda .t { font-family: Cambria, Georgia, serif; font-size: 17px;
+              font-weight: 700; color: #1E2664; }
+  .banda .d { font-size: 11px; color: #8b93ad; }
+  .banda .l { flex: 1; height: 1px; background: #dde4f2; }
+
+  .fila { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  .c { border-radius: 10px; padding: 14px 16px 14px; display: flex; flex-direction: column; }
+  .c .num { font-family: Cambria, Georgia, serif; font-size: 23px;
+            font-weight: 700; line-height: 1; }
+  .c .eti { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+            font-weight: 700; }
+  .c .quien { font-size: 13.5px; font-weight: 700; margin: 7px 0 2px;
+              font-family: Cambria, Georgia, serif; }
+  .c .rol { font-size: 10px; letter-spacing: .2px; }
+  ul { list-style: none; margin-top: 10px; }
+  li { font-size: 10.3px; line-height: 1.45; padding-left: 10px;
+       position: relative; margin-bottom: 6px; }
+  li::before { content: "–"; position: absolute; left: 0; }
+
+  .hecho { background: #EDF4FE; }
+  .hecho .eti { color: #8b97bd; }
+  .hecho .quien { color: #1E2664; }
+  .hecho li { color: #414a63; }
+  .hecho li::before { color: #9aa5c4; }
+
+  .prop { background: #1E2664; }
+  .prop .num { color: #7f93d8; }
+  .prop .quien { color: #fff; }
+  .prop .rol { color: #a9b4dc; }
+  .prop li { color: #d6ddf3; }
+  .prop li::before { color: #7f93d8; }
+
+  .pie { position: absolute; left: 46px; right: 46px; bottom: 24px;
+         display: flex; justify-content: space-between; align-items: center;
+         border-top: 1px solid #e6ebf6; padding-top: 8px;
+         font-size: 10px; color: #8b93ad; }
+
+  /* teléfono: se reacomoda en una columna en vez de encogerse */
+  @media (max-width: 899px) {
+    body { background: #fff; }
+    .wrap { display: block; min-height: 0; padding: 0; }
+    .marco { width: auto !important; height: auto !important; }
+    .slide { width: auto; height: auto; transform: none !important;
+             padding: 26px 20px 30px; box-shadow: none; border-radius: 0; }
+    .marca { position: static; text-align: left; margin-bottom: 16px; }
+    h1 { font-size: 25px; }
+    .sub { font-size: 13.5px; }
+    .fila { grid-template-columns: 1fr; gap: 11px; }
+    .banda { margin: 22px 0 11px; flex-wrap: wrap; }
+    .banda .d { flex-basis: 100%; }
+    li { font-size: 12.5px; margin-bottom: 7px; }
+    .c .quien { font-size: 16px; }
+    .c .rol, .c .eti { font-size: 11px; }
+    .c .num { font-size: 26px; }
+    .fila.b .c { min-height: 0; }
+    .pie { position: static; margin-top: 24px; display: block;
+           font-size: 11.5px; line-height: 1.5; }
+    .pie div:last-child { margin-top: 6px; }
+  }
+</style></head><body>
+<div class="wrap"><div class="marco" id="m"><div class="slide" id="s">
+
+<div class="marca"><div class="n">CLAVES</div><div class="s">Información Competitiva</div></div>
+
+<h1>Dónde estamos y qué vamos a trabajar</h1>
+<div class="sub">Proyecto Go-to-Market · Prominente — lectura del relevamiento y agenda de trabajo con el equipo</div>
+
+<div class="banda"><div class="t">La lectura</div>
+  <div class="d">Lo que dejaron las conversaciones de relevamiento</div><div class="l"></div></div>
+
+<div class="fila a">
+  <div class="c hecho">
+    <div class="eti">Diagnóstico</div>
+    <div class="quien">Dónde estamos</div>
+    <ul>
+      <li>La demanda de servicios tecnológicos cambió y buena parte del portfolio quedó atado a una etapa anterior</li>
+      <li>La llegada al mercado se apoyó en volumen de contactación y el funnel no terminó de alimentarse</li>
+      <li>No están definidos con precisión el cliente objetivo ni la oferta con la que salimos</li>
+      <li>Las capacidades técnicas están y son sólidas: no es un problema de qué sabemos hacer</li>
+    </ul>
+  </div>
+
+  <div class="c hecho">
+    <div class="eti">Momento</div>
+    <div class="quien">Por qué ahora</div>
+    <ul>
+      <li>La decisión está tomada y tiene respaldo de la conducción y del grupo: el rumbo no está en discusión</li>
+      <li>La organización ya demostró capacidad de cambiar y de sostener decisiones de alto impacto</li>
+      <li>Hay una estructura nueva de arquitectura de soluciones funcionando como punto de contacto</li>
+      <li>De ese abordaje ya surgieron oportunidades concretas, y una está en prueba</li>
+    </ul>
+  </div>
+
+  <div class="c hecho">
+    <div class="eti">Dirección</div>
+    <div class="quien">Hacia dónde puede ir</div>
+    <ul>
+      <li>Servicios repetibles y empaquetables, con recurrencia, antes que proyectos únicos</li>
+      <li>Soluciones punta a punta: no solo construir, también operar y sostener</li>
+      <li>El ADN industrial y de ingeniería del grupo como diferencia frente a los jugadores de software puro</li>
+      <li>Clientes de gran porte ya atendidos: un activo de referencia que todavía no usamos</li>
+    </ul>
+  </div>
+
+  <div class="c hecho">
+    <div class="eti">Competencia</div>
+    <div class="quien">La venta consultiva</div>
+    <ul>
+      <li>El análisis de mercado va a decir dónde jugar; no reemplaza la capacidad de conversar el negocio del cliente</li>
+      <li>La conversación puramente técnica ya no alcanza: del otro lado hoy está el área de negocio</li>
+      <li>Es una competencia que se desarrolla con práctica, no con un documento</li>
+      <li>Trabajarla desde ahora es lo que permite llegar a la implementación con el equipo entrenado</li>
+    </ul>
+  </div>
+</div>
+
+<div class="banda"><div class="t">La agenda</div>
+  <div class="d">Cuatro encuentros antes de la entrega del análisis de mercado — temas de trabajo, no una secuencia cerrada</div>
+  <div class="l"></div></div>
+
+<div class="fila b">
+  <div class="c prop">
+    <div class="num">01</div>
+    <div class="quien">De dónde salen las conversaciones</div>
+    <div class="rol">Semana del 17 de agosto</div>
+    <ul>
+      <li>Qué universo de clientes y relaciones ya tenemos, y qué dice de nosotros</li>
+      <li>Qué hace que una cuenta merezca una conversación</li>
+      <li>El lugar de los públicos internos del grupo</li>
+    </ul>
+  </div>
+
+  <div class="c prop">
+    <div class="num">02</div>
+    <div class="quien">La entrevista de problema</div>
+    <div class="rol">Semana del 24 de agosto</div>
+    <ul>
+      <li>Cómo se escucha un problema de negocio detrás de un pedido técnico</li>
+      <li>Qué preguntas abren la conversación y cuáles la cierran</li>
+      <li>Cómo se conduce una reunión sin llevar una solución puesta</li>
+    </ul>
+  </div>
+
+  <div class="c prop">
+    <div class="num">03</div>
+    <div class="quien">Del problema a la propuesta</div>
+    <div class="rol">Semana del 31 de agosto</div>
+    <ul>
+      <li>Cómo se traduce un problema de negocio en una solución posible</li>
+      <li>Qué hace que una propuesta se entienda y se sostenga</li>
+      <li>Qué de lo nuestro es repetible y cómo se empaqueta</li>
+    </ul>
+  </div>
+
+  <div class="c prop">
+    <div class="num">04</div>
+    <div class="quien">Sostener en el tiempo</div>
+    <div class="rol">Semana del 7 de septiembre</div>
+    <ul>
+      <li>Qué se registra de cada conversación y para qué</li>
+      <li>Cómo se le da continuidad a una oportunidad que no cerró</li>
+      <li>Los clientes actuales como fuente de nuevas conversaciones</li>
+    </ul>
+  </div>
+</div>
+
+<div class="pie">
+  <div>La base que construyamos en estos cuatro encuentros es la que vamos a usar cuando llegue el momento de implementar.</div>
+  <div>Agosto 2026</div>
+</div>
+
+</div></div></div>
+<script>
+  function fit() {
+    var m = document.getElementById('m'), s = document.getElementById('s');
+    if (window.innerWidth < 900) { s.style.transform = ''; m.style.width = ''; m.style.height = ''; return; }
+    var k = Math.min((window.innerWidth - 32) / 1280, (window.innerHeight - 32) / 720);
+    s.style.transform = 'scale(' + k + ')';
+    m.style.width  = (1280 * k) + 'px';
+    m.style.height = (720 * k) + 'px';
+  }
+  window.addEventListener('resize', fit); fit();
+</script>
+</body></html>
